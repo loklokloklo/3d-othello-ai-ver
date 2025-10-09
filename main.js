@@ -40,7 +40,7 @@ const size = 4;
 
 function init() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color('#ccf2ff'); // 薄い水色の背景
+  scene.background = new THREE.Color('#ccffd0'); // 薄い緑色の背景
 
   camera = new THREE.PerspectiveCamera(
     45,
@@ -346,7 +346,20 @@ function handlePointerDownOnce(event) {
 
     updateStoneCountDisplay();
     showAllLegalMoves();
-    checkGameEnd();
+    
+     // 次の手番に合法手がなければパス
+    if (gameStarted === true){
+      if (!hasAnyLegalMove(currentTurn)) {
+      // 両者とも置けなければゲーム終了
+        const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
+        if (!hasAnyLegalMove(otherPlayer)) {
+          checkGameEnd();
+        } else {
+          showPassPopup(); // パス表示
+          // パス OK ボタンで currentTurn が再度切り替わるのでここでは変更不要
+        }
+      }
+    }
 
     if (currentTurn === aiColor) {
       handleAITurn();
@@ -547,7 +560,7 @@ function showGameResultUI(result) {
   container.style.zIndex = '100';
 
   const text = document.createElement('p');
-  text.textContent = `勝者: ${result.winner}（黒: ${result.score.black} - 白: ${result.score.white}）`;
+  text.textContent = `勝者: ${result.result}（黒: ${result.score.black} - 白: ${result.score.white}）`;
   container.appendChild(text);
 
   // 棋譜送信ボタン
@@ -609,14 +622,15 @@ function checkGameEnd() {
   const blackHasMove = hasAnyLegalMove('black');
   const whiteHasMove = hasAnyLegalMove('white');
 
+  // 終了条件：盤が埋まった もしくは 両者が合法手を持たない
   if (boardFull || (!blackHasMove && !whiteHasMove)) {
     const result = countStones();
-    let winner = null;
 
-    if (result.black > result.white) winner = 'black';
-    else if (result.white > result.black) winner = 'white';
-    else winner = 'draw';
+    // 勝敗判定
+    const winner = result.black > result.white ? 'black' :
+                   result.white > result.black ? 'white' : 'draw';
 
+    // 棋譜を整形
     const formattedMoves = moveHistory.map((entry, i) => {
       if (entry.pass) {
         return {
@@ -636,18 +650,19 @@ function checkGameEnd() {
       }
     });
 
-    // 最終的に送信する棋譜データ
     const gameData = {
-      first: firstPlayer,       // 'black' または 'white'
-      result: winner,           // 'black' / 'white' / 'draw'
-      score: result,            // { black: 〜, white: 〜 }
-      moves: formattedMoves     // 各手の履歴（1-indexed）
+      first: firstPlayer,
+      result: winner,
+      score: result,
+      moves: formattedMoves
     };
 
     console.log('🎯 ゲーム終了:', gameData);
-    showGameResultUI(gameData); // UIに表示 or サーバに送信
+    showGameResultUI(gameData);
   }
 }
+
+
 function hasAnyLegalMove(player) {
   for (let x = 0; x < size; x++) {
     for (let y = 0; y < size; y++) {
@@ -807,3 +822,4 @@ function convertBoardForAI(board) {
     )
   );
 }
+
