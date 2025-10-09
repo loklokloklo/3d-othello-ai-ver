@@ -738,26 +738,25 @@ async function fetchAIMove(board, player) {
 }
 
 function handleAITurn() {
-  if (currentTurn !== aiColor) {
-    console.log("❌ handleAITurn: 呼び出されたが currentTurn ≠ aiColor");
-    return;
-  }
+  if (currentTurn !== aiColor) return;
 
   console.log("🧠 AIターン開始: currentTurn =", currentTurn);
 
-  
   setTimeout(async () => {
     if (!hasAnyLegalMove(aiColor)) {
       console.log("🚫 AIに合法手がないと判定された！");
       moveHistory.push({ player: aiColor, pass: true });
       
-      showPassPopup("AIはパスなので連続でプレイヤーのターンです");
+      // AIは簡易通知のみ
+      alert("AIはパスしました。あなたの手番です。");
+
+      currentTurn = currentTurn === 'black' ? 'white' : 'black';
+      showAllLegalMoves();
       return;
     }
 
     const aiMove = await fetchAIMove(board, aiColor);
 
-    console.log("🤖 AIの手 = ", aiMove);
     if (aiMove) {
       const [x, y, z] = aiMove;
       const color = aiColor === 'black' ? 0x000000 : 0xffffff;
@@ -769,15 +768,18 @@ function handleAITurn() {
 
       moveHistory.push({ player: aiColor, move: [x, y, z] });
       flipStones(x, y, z, aiColor);
-      currentTurn = aiColor === 'black' ? 'white' : 'black';
+      currentTurn = currentTurn === 'black' ? 'white' : 'black';
 
       updateStoneCountDisplay();
       showAllLegalMoves();
       checkGameEnd();
+
+      // AIがパスしなければ次の手番へ
       handleAITurn();
     }
   }, 0);
 }
+
 
 function convertBoardForAI(board) {
   return board.map(layer =>
@@ -790,3 +792,4 @@ function convertBoardForAI(board) {
     )
   );
 }
+
