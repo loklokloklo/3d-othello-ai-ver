@@ -681,8 +681,7 @@ function hasAnyLegalMove(player) {
 }
 
 function showPassPopup() {
-  const passPopup = document.getElementById('pass-popup');
-  const turnUI = document.getElementById('turn-selection');
+  document.getElementById('pass-popup').style.display = 'block';
 }
 
 
@@ -791,6 +790,7 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
 
 
