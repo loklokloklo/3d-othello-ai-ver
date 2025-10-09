@@ -683,34 +683,6 @@ function hasAnyLegalMove(player) {
 function showPassPopup() {
   const passPopup = document.getElementById('pass-popup');
   const turnUI = document.getElementById('turn-selection');
-
-  // ✅ デバッグ出力
-  console.log('🟡 showPassPopup called');
-  console.log('🔸 gameStarted:', gameStarted);
-  console.log('🔸 firstPlayer:', firstPlayer);
-  console.log('🔸 turnUI.style.display:', turnUI ? turnUI.style.display : 'null');
-
-  // ✅ ゲームが開始していないなら表示しない
-  if (gameStarted === false) {
-    console.log('⛔ gameStarted is false → パスポップアップ非表示');
-    return;
-  }
-
-  // ✅ プレイヤーが未選択なら表示しない
-  if (!firstPlayer) {
-    console.log('⛔ firstPlayer is falsy → パスポップアップ非表示');
-    return;
-  }
-
-  // ✅ 手番選択UIがまだ表示中なら表示しない
-  if (turnUI && turnUI.style.display !== 'none') {
-    console.log('⛔ 手番選択UIが表示中 → パスポップアップ非表示');
-    return;
-  }
-
-  // ✅ すべての条件を通過した場合のみ表示
-  console.log('✅ 全ての条件OK → パスポップアップを表示');
-  passPopup.style.display = 'block';
 }
 
 
@@ -819,6 +791,7 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
 
 
