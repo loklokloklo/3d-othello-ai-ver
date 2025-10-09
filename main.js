@@ -779,11 +779,8 @@ function handleAITurn() {
     if (!hasAnyLegalMove(aiColor)) {
       console.log("🚫 AIに合法手がないと判定された！");
       moveHistory.push({ player: aiColor, pass: true });
-      currentTurn = aiColor === 'black' ? 'white' : 'black';
-      updateStoneCountDisplay();
-      showAllLegalMoves();
-      checkGameEnd();
-      handleAITurn(); // 次がAIなら再帰
+      
+      showPassPopup("AIはパスなので連続でプレイヤーのターンです");
       return;
     }
 
@@ -806,12 +803,6 @@ function handleAITurn() {
       updateStoneCountDisplay();
       showAllLegalMoves();
       checkGameEnd();
-      handleAITurn(); // 次がAIなら再帰
-    } else {
-      moveHistory.push({ player: aiColor, pass: true });
-      currentTurn = aiColor === 'black' ? 'white' : 'black';
-      showAllLegalMoves();
-      checkGameEnd();
       handleAITurn();
     }
   }, 0);
@@ -828,5 +819,6 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
 
