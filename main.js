@@ -5,7 +5,7 @@ import { CSS2DRenderer, CSS2DObject } from './libs/CSS2DRenderer.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
 
-
+window.init = init;
 
 
 let scene, camera, renderer, labelRenderer, controls;
@@ -196,8 +196,6 @@ updateStoneCountDisplay(); // ← 初期配置反映
   animate();
 }
 
-window.init = init;
-
 function createAxisLabel(text, x, y, z) {
   const div = document.createElement('div');
   div.className = 'label';
@@ -214,10 +212,10 @@ function animate() {
   labelRenderer.render(scene, camera);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const turnUI = document.getElementById('turn-selection');
-  const blackButton = document.getElementById('black-button');
-  const whiteButton = document.getElementById('white-button');
+
+const turnUI = document.getElementById('turn-selection');
+const blackButton = document.getElementById('black-button');
+const whiteButton = document.getElementById('white-button');
 
   if (blackButton && whiteButton && turnUI) {
     blackButton.addEventListener('click', () => {
@@ -248,17 +246,13 @@ document.addEventListener('DOMContentLoaded', () => {
        setTimeout(() => {
         setupPointerListener();
       }, 100);
-      console.log("✅ 白選択: AIカラー=", aiColor, " 現在の手番=", currentTurn);
 
       if (currentTurn === aiColor) {
-        console.log("✅ AI先手なので handleAITurn 呼び出し");
         handleAITurn();
       }
     });
-  } else {
-    console.error("❌ ボタンやUIが見つかりません");
-  }
-});
+  
+}
 
 
 function createStone(x, y, z, color, isLastPlaced = false) {
@@ -293,19 +287,8 @@ function revertPreviousRedStone(color) {
   }
 }
 
-function setupPointerListener() {
-  window.addEventListener('pointerdown', handlePointerDownOnce);
-}
 
-function handlePointerDownOnce(event) {
-  if (!gameStarted || !firstPlayer) return;
-
-  // プレイヤーが合法手を持たない場合はパス表示（AIの手番は自動処理される）
-  if (!hasAnyLegalMove(currentTurn) && currentTurn !== aiColor) {
-    showPassPopup();
-    return;
-  }
-
+window.addEventListener('pointerdown', (event) => {
   if (currentTurn === aiColor) return;
 
   const mouse = new THREE.Vector2();
@@ -316,64 +299,65 @@ function handlePointerDownOnce(event) {
   raycaster.setFromCamera(mouse, camera);
 
   const intersects = raycaster.intersectObjects(boardGroup.children, true);
-  if (intersects.length > 0) {
-    const intersect = intersects[0];
-    const point = intersect.object.parent.position;
+    if (intersects.length > 0) {
+        const intersect = intersects[0];
+        const point = intersect.object.parent.position;
 
-    const x = Math.round(point.x / spacing) - 1;
-    const y = Math.round(point.y / spacing) - 1;
-    const z = Math.round(point.z / spacing) - 1;
+        const x = Math.round(point.x / spacing) - 1;
+        const y = Math.round(point.y / spacing) - 1;
+        const z = Math.round(point.z / spacing) - 1;
 
-    const key = `${x},${y},${z}`;
-    if (placedStones.has(key)) return;
-    if (!isLegalMove(board, x, y, z, currentTurn)) return;
+        const key = `${x},${y},${z}`;
+        if (placedStones.has(key)) return;
+        if (!isLegalMove(board, x, y, z, currentTurn)) return;
 
-    // 石を置く前に、前の赤い石を元の色に戻す
-    if (lastPlacedStone) {
-      const [lx, ly, lz] = lastPlacedStone;
-      const prevColor = currentTurn === 'black' ? 0xffffff : 0x000000;
-      revertPreviousRedStone(prevColor);
+        // 石を置く前に、前の赤い石を元の色に戻す
+        if (lastPlacedStone) {
+        const [lx, ly, lz] = lastPlacedStone;
+        const prevColor = currentTurn === 'black' ? 0xffffff : 0x000000;
+        revertPreviousRedStone(prevColor);
+        }
+
+        const color = currentTurn === 'black' ? 0x000000 : 0xffffff;
+        createStone(x, y, z, color, false);
+
+        board[x][y][z] = currentTurn;
+        placedStones.add(key);
+
+        moveHistory.push({ player: currentTurn, move: [x, y, z] });
+
+        flipStones(x, y, z, currentTurn);
+        currentTurn = currentTurn === 'black' ? 'white' : 'black';
+
+        updateStoneCountDisplay();
+        showAllLegalMoves();
+        
+            // 次の手番に合法手がなければパス or ゲーム終了
+            if (gameStarted === true) {
+            const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
+            const currentHasMove = hasAnyLegalMove(currentTurn);
+            const otherHasMove = hasAnyLegalMove(otherPlayer);
+
+            // 双方とも合法手がなければゲーム終了
+            if (!currentHasMove && !otherHasMove) {
+                checkGameEnd();
+                return; // ここで処理を終了
+            }
+
+            // 現在の手番がパスの場合
+            if (!currentHasMove) {
+                showPassPopup();
+                // パスOKボタンで currentTurn は切り替わるので、ここで切り替えは不要
+                return;
+            }
+
+            // AIの手番ならAIを実行
+                if (currentTurn === aiColor) {
+                    handleAITurn();
+                }
+            }
     }
-
-    const color = currentTurn === 'black' ? 0x000000 : 0xffffff;
-    createStone(x, y, z, color, false);
-
-    board[x][y][z] = currentTurn;
-    placedStones.add(key);
-
-    moveHistory.push({ player: currentTurn, move: [x, y, z] });
-
-    flipStones(x, y, z, currentTurn);
-    currentTurn = currentTurn === 'black' ? 'white' : 'black';
-
-    updateStoneCountDisplay();
-    showAllLegalMoves();
-    
-     // 次の手番に合法手がなければパス or ゲーム終了
-if (gameStarted === true) {
-  const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
-  const currentHasMove = hasAnyLegalMove(currentTurn);
-  const otherHasMove = hasAnyLegalMove(otherPlayer);
-
-  // 双方とも合法手がなければゲーム終了
-  if (!currentHasMove && !otherHasMove) {
-    checkGameEnd();
-    return; // ここで処理を終了
-  }
-
-  // 現在の手番がパスの場合
-  if (!currentHasMove) {
-    showPassPopup();
-    // パスOKボタンで currentTurn は切り替わるので、ここで切り替えは不要
-    return;
-  }
-
-  // AIの手番ならAIを実行
-  if (currentTurn === aiColor) {
-    handleAITurn();
-  }
-}
-
+});
 
 
 
@@ -792,4 +776,4 @@ function convertBoardForAI(board) {
       })
     )
   );
-}}}
+}
