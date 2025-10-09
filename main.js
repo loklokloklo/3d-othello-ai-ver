@@ -5,7 +5,7 @@ import { CSS2DRenderer, CSS2DObject } from './libs/CSS2DRenderer.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
 
-window.init = init;
+
 
 
 let scene, camera, renderer, labelRenderer, controls;
@@ -195,6 +195,8 @@ createAxisLabel('Z', 0, 0, (4 + 0.5) * spacing);
 updateStoneCountDisplay(); // ← 初期配置反映
   animate();
 }
+
+window.init = init;
 
 function createAxisLabel(text, x, y, z) {
   const div = document.createElement('div');
@@ -792,4 +794,5 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
