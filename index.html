@@ -93,13 +93,11 @@
 </head>
 <body>
 <!-- 石の数表示 -->
-<div id="stone-count-display" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: black; background: rgba(255,255,255,0.8); padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: bold; z-index: 10;">
+<div id="stone-count-display" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: black; background: rgba(255,255,255,0.9); padding: 15px 30px; border-radius: 12px; font-size: 24px; font-weight: bold; z-index: 10; min-width: 220px; text-align: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);">
   黒: 0 ／ 白: 0
 </div>
 
-
-
-  <!-- 手番選択UI -->
+ <!-- 手番選択UI -->
   <div id="turn-selection">
     <h2>手番を選んでください</h2>
     <button id="black-button">先手（黒）</button>
@@ -131,12 +129,13 @@ align-items: center;
 </div>
 
 
-  <!-- ゲーム結果後のUI -->
-  <div id="game-end-ui" style="display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; text-align: center; z-index: 10;">
-    <p id="game-result-text" style="font-size: 18px; font-weight: bold; margin-bottom: 15px;"></p>
-    <button id="send-kifu-btn">棋譜を送信</button>
-    <button id="new-game-btn" style="margin-left: 10px;">新しいゲーム</button>
-  </div>
+ <!-- ゲーム結果後のUI -->
+<div id="game-end-ui" style="display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px 40px; border-radius: 15px; text-align: center; z-index: 10; min-width: 300px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);">
+  <p id="game-result-text" style="font-size: 24px; font-weight: bold; margin-bottom: 20px;"></p>
+  <button id="send-kifu-btn" style="font-size: 18px; padding: 10px 20px; border-radius: 8px; margin: 5px;">棋譜を送信</button>
+  <button id="new-game-btn" style="font-size: 18px; padding: 10px 20px; border-radius: 8px; margin: 5px;">新しいゲーム</button>
+</div>
+
 
 
 
@@ -223,3 +222,4 @@ align-items: center;
 
 </body>
 </html>
+
