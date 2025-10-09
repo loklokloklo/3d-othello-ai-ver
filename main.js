@@ -348,14 +348,14 @@ window.addEventListener('pointerdown', (event) => {
 
             // 現在の手番がパスの場合
             if (!currentHasMove) {
-              passcounter = 1;
+              passcounter += 1;
                 showPassPopup();
                 // パスOKボタンで currentTurn は切り替わるので、ここで切り替えは不要
                 return;
             }
 
             // AIの手番ならAIを実行
-                if (currentTurn === aiColor && passCounter === 0) {  // ← passCounter 条件を追加
+                if (currentTurn === aiColor && passcounter >= 2) {  // ← passCounter 条件を追加
                   handleAITurn();
                 }
             }
@@ -780,5 +780,6 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
 
