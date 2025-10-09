@@ -780,6 +780,11 @@ function convertBoardForAI(board) {
   );
 }
 
+// gameStarted の値を1秒ごとに出力
+setInterval(() => {
+  console.log("gameStarted:", gameStarted);
+}, 1000);
+
 
 
 
