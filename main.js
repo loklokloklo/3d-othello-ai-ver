@@ -354,7 +354,7 @@ window.addEventListener('pointerdown', (event) => {
             }
 
             // AIの手番ならAIを実行
-                if (currentTurn === aiColor) {  
+                if (currentTurn === aiColor && gameStarted === true) {  
                   handleAITurn();
                 }
             }
@@ -779,6 +779,7 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
 
 
