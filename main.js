@@ -782,7 +782,6 @@ function handleAITurn() {
   }, 0);
 }
 
-
 function convertBoardForAI(board) {
   return board.map(layer =>
     layer.map(row =>
@@ -794,5 +793,3 @@ function convertBoardForAI(board) {
     )
   );
 }
-
-
