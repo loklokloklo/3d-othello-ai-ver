@@ -21,6 +21,7 @@ const stoneMap = new Map(); // キー = "x,y,z", 値 = stone Mesh
 const moveHistory = []; // 各手の記録 ["2,3,1", "1,1,1", ...]
 let firstPlayer = 'black';
 let lastPlacedColor = null; 
+let passcounter = 0;
 let aiColor;
 
 const firebaseConfig = {
@@ -347,14 +348,15 @@ window.addEventListener('pointerdown', (event) => {
 
             // 現在の手番がパスの場合
             if (!currentHasMove) {
+              passcounter = 1;
                 showPassPopup();
                 // パスOKボタンで currentTurn は切り替わるので、ここで切り替えは不要
                 return;
             }
 
             // AIの手番ならAIを実行
-                if (currentTurn === aiColor) {
-                    handleAITurn();
+                if (currentTurn === aiColor && passCounter === 0) {  // ← passCounter 条件を追加
+                  handleAITurn();
                 }
             }
     }
@@ -778,4 +780,5 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
