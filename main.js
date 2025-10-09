@@ -347,25 +347,31 @@ function handlePointerDownOnce(event) {
     updateStoneCountDisplay();
     showAllLegalMoves();
     
-     // 次の手番に合法手がなければパス
-    if (gameStarted === true){
-      if (!hasAnyLegalMove(currentTurn)) {
-      // 両者とも置けなければゲーム終了
-        const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
-        if (!hasAnyLegalMove(otherPlayer)) {
-          checkGameEnd();
-        } else {
-          showPassPopup(); // パス表示
-          // パス OK ボタンで currentTurn が再度切り替わるのでここでは変更不要
-        }
-      }
-    }
+     // 次の手番に合法手がなければパス or ゲーム終了
+if (gameStarted === true) {
+  const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
+  const currentHasMove = hasAnyLegalMove(currentTurn);
+  const otherHasMove = hasAnyLegalMove(otherPlayer);
 
-    if (currentTurn === aiColor) {
-      handleAITurn();
-    }
+  // 双方とも合法手がなければゲーム終了
+  if (!currentHasMove && !otherHasMove) {
+    checkGameEnd();
+    return; // ここで処理を終了
+  }
+
+  // 現在の手番がパスの場合
+  if (!currentHasMove) {
+    showPassPopup();
+    // パスOKボタンで currentTurn は切り替わるので、ここで切り替えは不要
+    return;
+  }
+
+  // AIの手番ならAIを実行
+  if (currentTurn === aiColor) {
+    handleAITurn();
   }
 }
+
 
 
 
@@ -822,4 +828,5 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
