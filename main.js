@@ -790,8 +790,3 @@ function convertBoardForAI(board) {
     )
   );
 }
-
-
-
-
-
