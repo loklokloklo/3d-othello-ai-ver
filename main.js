@@ -20,6 +20,7 @@ let lastPlacedStone = null;
 const stoneMap = new Map(); // キー = "x,y,z", 値 = stone Mesh
 const moveHistory = []; // 各手の記録 ["2,3,1", "1,1,1", ...]
 let firstPlayer = 'black';
+let lastPlacedColor = null; 
 let aiColor;
 
 const firebaseConfig = {
@@ -777,3 +778,4 @@ function convertBoardForAI(board) {
     )
   );
 }
+
