@@ -436,6 +436,7 @@ function isLegalMove(board, x, y, z, currentTurn) {
 
   return legal;
 }
+
 function showLegalMoveIndicator(x, y, z) {
   const geometry = new THREE.SphereGeometry(stoneRadius * 0.6, 16, 16);
   const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
@@ -794,7 +795,7 @@ function showAIPassPopup(message) {
 
 
 
-function handleAITurn() {
+async function handleAITurn() {
   if (currentTurn !== aiColor) {
     console.log("❌ handleAITurn: 呼び出されたが currentTurn ≠ aiColor");
     return;
@@ -802,50 +803,155 @@ function handleAITurn() {
 
   console.log("🧠 AIターン開始: currentTurn =", currentTurn);
 
-  
+  // 盤情報を最新化（ビュー側も更新）
+  updateStoneCountDisplay();
+  showAllLegalMoves();
+
+  // 少しだけ遅らせて非同期スコープで処理（UIが描画される余裕をつくる）
   setTimeout(async () => {
+    // ① まず軽量チェック：明らかに置けないなら即パス処理
     if (!hasAnyLegalMove(aiColor)) {
-      showAIPassPopup("AIはパスしました");
-      console.log("🚫 AIに合法手がないと判定された！");
+      console.log("🧾 hasAnyLegalMove => false: AIは確実に置けない");
+      // パス処理
       moveHistory.push({ player: aiColor, pass: true });
-      revertPreviousRedStone(aiColor === 'black' ? 0x000000 : 0xffffff);
+      // 前回赤膜の復元（lastPlacedColor を使うことを推奨）
+      if (lastPlacedStone) {
+        const prevColor = (typeof lastPlacedColor === 'string' && lastPlacedColor === 'black') ? 0x000000 : 0xffffff;
+        revertPreviousRedStone(prevColor);
+      }
+      showAIPassPopup("AIはパスしました");
       currentTurn = aiColor === 'black' ? 'white' : 'black';
       updateStoneCountDisplay();
       showAllLegalMoves();
-      checkGameEnd();
-      setTimeout(() => handleAITurn(), 800); // 次がAIなら再帰
+      if (checkGameEnd()) return;
+      // 次がAIなら再帰（遅延）
+      if (currentTurn === aiColor) setTimeout(() => handleAITurn(), 800);
       return;
     }
 
-    const aiMove = await fetchAIMove(board, aiColor);
-
-    console.log("🤖 AIの手 = ", aiMove);
-    if (aiMove) {
-      const [x, y, z] = aiMove;
-      const color = aiColor === 'black' ? 0x000000 : 0xffffff;
-
-      createStone(x, y, z, color, true);
-      board[x][y][z] = aiColor;
-      placedStones.add(`${x},${y},${z}`);
-      lastPlacedStone = [x, y, z];
-
-      moveHistory.push({ player: aiColor, move: [x, y, z] });
-      flipStones(x, y, z, aiColor);
-      currentTurn = aiColor === 'black' ? 'white' : 'black';
-
-      updateStoneCountDisplay();
-      showAllLegalMoves();
-      checkGameEnd();
-      handleAITurn(); // 次がAIなら再帰
-    } else {
-      moveHistory.push({ player: aiColor, pass: true });
-      currentTurn = aiColor === 'black' ? 'white' : 'black';
-      showAllLegalMoves();
-      checkGameEnd();
-      handleAITurn();
+    // ② hasAnyLegalMove が true の場合、fetchAIMove に頼る
+    let aiMove = null;
+    try {
+      aiMove = await fetchAIMove(board, aiColor);
+    } catch (err) {
+      console.error("fetchAIMove が例外を投げました:", err);
+      aiMove = null;
     }
+    console.log("🤖 fetchAIMove の戻り =", aiMove);
+
+    // ③ fetchAIMove が null の場合はフォールバック・再確認を行う
+    if (aiMove == null) {
+      console.warn("⚠️ fetchAIMove が null を返したため、フォールバックで合法手を再確認します");
+
+      // フォールバック：自前で合法手リストを作る（generateLegalMoves は盤全探索して合法を返す関数）
+      const fallbackMoves = generateLegalMoves(aiColor); // 例: [{x,y,z}, ...] を返すこと
+      console.log("🧩 フォールバックで検出した合法手数 =", fallbackMoves.length);
+
+      if (fallbackMoves.length === 0) {
+        // 本当に置けない（fetchAIMove と整合）
+        console.log("🚫 フォールバックでも合法手なし：AIパス確定");
+        moveHistory.push({ player: aiColor, pass: true });
+        if (lastPlacedStone) {
+          const prevColor = (typeof lastPlacedColor === 'string' && lastPlacedColor === 'black') ? 0x000000 : 0xffffff;
+          revertPreviousRedStone(prevColor);
+        }
+        showAIPassPopup("AIはパスしました");
+        currentTurn = aiColor === 'black' ? 'white' : 'black';
+        updateStoneCountDisplay();
+        showAllLegalMoves();
+        if (checkGameEnd()) return;
+        if (currentTurn === aiColor) setTimeout(() => handleAITurn(), 800);
+        return;
+      } else {
+        // フォールバックで合法手があるが fetchAIMove が null: AI側の一時エラーの可能性
+        console.warn("⚠️ fetchAIMove が null だがフォールバックでは手が存在 -> 1回だけリトライします");
+        // 1回だけ短い遅延で再試行
+        setTimeout(async () => {
+          let retryMove = null;
+          try {
+            retryMove = await fetchAIMove(board, aiColor);
+          } catch (err) {
+            console.error("fetchAIMove retry で例外:", err);
+            retryMove = null;
+          }
+          console.log("🔁 retry fetchAIMove の戻り =", retryMove);
+          if (retryMove == null) {
+            // 安全側：今回はパス扱い（無限ループ阻止のため）
+            console.error("❌ retryでも取得できず：安全のため今回AIはパス扱いにします");
+            moveHistory.push({ player: aiColor, pass: true });
+            if (lastPlacedStone) {
+              const prevColor = (typeof lastPlacedColor === 'string' && lastPlacedColor === 'black') ? 0x000000 : 0xffffff;
+              revertPreviousRedStone(prevColor);
+            }
+            showAIPassPopup("AIはパスしました");
+            currentTurn = aiColor === 'black' ? 'white' : 'black';
+            updateStoneCountDisplay();
+            showAllLegalMoves();
+            if (checkGameEnd()) return;
+            if (currentTurn === aiColor) setTimeout(() => handleAITurn(), 800);
+            return;
+          } else {
+            // リトライ成功 -> 通常の着手処理へ
+            performAIMoveAndContinue(retryMove);
+            return;
+          }
+        }, 200); // 200ms の短い待ち
+        return; // リトライブロックに処理を移す
+      }
+    }
+
+    // ④ aiMove が存在する（通常ケース）なら着手処理
+    performAIMoveAndContinue(aiMove);
+
   }, 0);
 }
+
+// 着手処理を分離すると見通しが良い
+function performAIMoveAndContinue(aiMove) {
+  const [x, y, z] = aiMove;
+  const color = aiColor === 'black' ? 0x000000 : 0xffffff;
+
+  // 前の赤膜を戻す（もし必要なら lastPlacedColor を参照）
+  if (lastPlacedStone) {
+    const prevColor = (typeof lastPlacedColor === 'string' && lastPlacedColor === 'black') ? 0x000000 : 0xffffff;
+    revertPreviousRedStone(prevColor);
+  }
+
+  createStone(x, y, z, color, true);
+  board[x][y][z] = aiColor;
+  placedStones.add(`${x},${y},${z}`);
+  lastPlacedStone = [x, y, z];
+  lastPlacedColor = aiColor;
+
+  moveHistory.push({ player: aiColor, move: [x, y, z] });
+  flipStones(x, y, z, aiColor);
+
+  currentTurn = aiColor === 'black' ? 'white' : 'black';
+  updateStoneCountDisplay();
+  showAllLegalMoves();
+  if (checkGameEnd()) return;
+
+  if (currentTurn === aiColor) {
+    setTimeout(() => handleAITurn(), 800);
+  }
+}
+
+function generateLegalMoves(color) {
+  const legalMoves = [];
+
+  for (let x = 0; x < 4; x++) {
+    for (let y = 0; y < 4; y++) {
+      for (let z = 0; z < 4; z++) {
+        if (isLegalMove(board, x, y, z, color)) {
+          legalMoves.push([x, y, z]);
+        }
+      }
+    }
+  }
+
+  return legalMoves;
+}
+
 
 function convertBoardForAI(board) {
   return board.map(layer =>
