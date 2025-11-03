@@ -17,6 +17,8 @@ let gameStarted = false;
 let board = [];
 const stoneRadius = 0.3;
 let lastPlacedStone = null;
+let lastPlacedColor = null;  // 最後に置かれた石の色（パスがあるため交互ではない可能性あり）
+
 const stoneMap = new Map(); // キー = "x,y,z", 値 = stone Mesh
 const moveHistory = []; // 各手の記録 ["2,3,1", "1,1,1", ...]
 let firstPlayer = 'black';
@@ -340,6 +342,9 @@ function handlePointerDownOnce(event) {
     placedStones.add(key);
 
     moveHistory.push({ player: currentTurn, move: [x, y, z] });
+
+    lastPlacedStone = [x, y, z];
+    lastPlacedColor = currentTurn; // ←これを必ず追加！
 
     flipStones(x, y, z, currentTurn);
     currentTurn = currentTurn === 'black' ? 'white' : 'black';
