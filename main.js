@@ -645,9 +645,11 @@ function checkGameEnd() {
     };
 
     console.log('🎯 ゲーム終了:', gameData);
+    gameStarted = false;
     showGameResultUI(gameData); // UIに表示 or サーバに送信
   }
 }
+
 function hasAnyLegalMove(player) {
   for (let x = 0; x < size; x++) {
     for (let y = 0; y < size; y++) {
@@ -745,6 +747,48 @@ async function fetchAIMove(board, player) {
   }
 }
 
+// --- AI専用のパス通知ポップアップ ---
+function showAIPassPopup(message) {
+  // すでに同種のポップアップが存在する場合は削除
+  const existingPopup = document.getElementById("ai-pass-popup");
+  if (existingPopup) existingPopup.remove();
+
+  // ポップアップ要素を作成
+  const popup = document.createElement("div");
+  popup.id = "ai-pass-popup";
+  popup.textContent = message;
+  popup.style.position = "fixed";
+  popup.style.top = "50%";
+  popup.style.left = "50%";
+  popup.style.transform = "translate(-50%, -50%)";
+  popup.style.background = "rgba(255, 80, 80, 0.9)";
+  popup.style.color = "white";
+  popup.style.padding = "20px 40px";
+  popup.style.borderRadius = "12px";
+  popup.style.fontSize = "20px";
+  popup.style.fontWeight = "bold";
+  popup.style.boxShadow = "0 0 15px rgba(0,0,0,0.3)";
+  popup.style.zIndex = "9999";
+  popup.style.opacity = "0";
+  popup.style.transition = "opacity 0.3s ease";
+
+  document.body.appendChild(popup);
+
+  // 表示アニメーション
+  requestAnimationFrame(() => {
+    popup.style.opacity = "1";
+  });
+
+  // 1.5秒後に自動で消える
+  setTimeout(() => {
+    popup.style.opacity = "0";
+    setTimeout(() => popup.remove(), 300);
+  }, 1500);
+}
+
+
+
+
 function handleAITurn() {
   if (currentTurn !== aiColor) {
     console.log("❌ handleAITurn: 呼び出されたが currentTurn ≠ aiColor");
@@ -758,11 +802,13 @@ function handleAITurn() {
     if (!hasAnyLegalMove(aiColor)) {
       console.log("🚫 AIに合法手がないと判定された！");
       moveHistory.push({ player: aiColor, pass: true });
+      revertPreviousRedStone(aiColor === 'black' ? 0x000000 : 0xffffff);
+      showAIPassPopup;
       currentTurn = aiColor === 'black' ? 'white' : 'black';
       updateStoneCountDisplay();
       showAllLegalMoves();
       checkGameEnd();
-      handleAITurn(); // 次がAIなら再帰
+      setTimeout(() => handleAITurn(), 800); // 次がAIなら再帰
       return;
     }
 
