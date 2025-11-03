@@ -706,6 +706,11 @@ document.getElementById('pass-ok-button').addEventListener('click', () => {
   currentTurn = currentTurn === 'black' ? 'white' : 'black';
   showAllLegalMoves();
 
+  if (lastPlacedStone) {
+    const prevColor = aiColor === 'black' ? 0x000000 : 0xffffff;
+    revertPreviousRedStone(prevColor);
+  }
+
   // ✅ AIが動くべきならここで判断（新方式）
 handleAITurn(); // ← これだけ残す！
 
@@ -800,10 +805,10 @@ function handleAITurn() {
   
   setTimeout(async () => {
     if (!hasAnyLegalMove(aiColor)) {
+      showAIPassPopup("AIはパスしました");
       console.log("🚫 AIに合法手がないと判定された！");
       moveHistory.push({ player: aiColor, pass: true });
       revertPreviousRedStone(aiColor === 'black' ? 0x000000 : 0xffffff);
-      showAIPassPopup;
       currentTurn = aiColor === 'black' ? 'white' : 'black';
       updateStoneCountDisplay();
       showAllLegalMoves();
