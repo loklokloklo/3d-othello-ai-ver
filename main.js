@@ -553,7 +553,7 @@ function showGameResultUI(result) {
   container.style.zIndex = '100';
 
   const text = document.createElement('p');
-  text.textContent = `勝者: ${result.winner}（黒: ${result.score.black} - 白: ${result.score.white}）`;
+  text.textContent = `勝者: ${result.result}（黒: ${result.score.black} - 白: ${result.score.white}）`;
   container.appendChild(text);
 
   // 棋譜送信ボタン
@@ -969,3 +969,4 @@ function convertBoardForAI(board) {
     )
   );
 }
+
