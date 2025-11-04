@@ -820,10 +820,11 @@ async function handleAITurn() {
       // パス処理
       moveHistory.push({ player: aiColor, pass: true });
       // 前回赤膜の復元（lastPlacedColor を使うことを推奨）
-      if (lastPlacedStone) {
-        const prevColor = (typeof lastPlacedColor === 'string' && lastPlacedColor === 'black') ? 0x000000 : 0xffffff;
+      if (lastPlacedStone && lastPlacedColor) {
+        const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
         revertPreviousRedStone(prevColor);
       }
+
       showAIPassPopup("AIはパスしました");
       currentTurn = aiColor === 'black' ? 'white' : 'black';
       updateStoneCountDisplay();
@@ -856,10 +857,10 @@ async function handleAITurn() {
         // 本当に置けない（fetchAIMove と整合）
         console.log("🚫 フォールバックでも合法手なし：AIパス確定");
         moveHistory.push({ player: aiColor, pass: true });
-        if (lastPlacedStone) {
-          const prevColor = (typeof lastPlacedColor === 'string' && lastPlacedColor === 'black') ? 0x000000 : 0xffffff;
-          revertPreviousRedStone(prevColor);
-        }
+      if (lastPlacedStone && lastPlacedColor) {
+        const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
+        revertPreviousRedStone(prevColor);
+      }
         showAIPassPopup("AIはパスしました");
         currentTurn = aiColor === 'black' ? 'white' : 'black';
         updateStoneCountDisplay();
@@ -884,10 +885,10 @@ async function handleAITurn() {
             // 安全側：今回はパス扱い（無限ループ阻止のため）
             console.error("❌ retryでも取得できず：安全のため今回AIはパス扱いにします");
             moveHistory.push({ player: aiColor, pass: true });
-            if (lastPlacedStone) {
-              const prevColor = (typeof lastPlacedColor === 'string' && lastPlacedColor === 'black') ? 0x000000 : 0xffffff;
-              revertPreviousRedStone(prevColor);
-            }
+      if (lastPlacedStone && lastPlacedColor) {
+        const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
+        revertPreviousRedStone(prevColor);
+      }
             showAIPassPopup("AIはパスしました");
             currentTurn = aiColor === 'black' ? 'white' : 'black';
             updateStoneCountDisplay();
@@ -917,10 +918,10 @@ function performAIMoveAndContinue(aiMove) {
   const color = aiColor === 'black' ? 0x000000 : 0xffffff;
 
   // 前の赤膜を戻す（もし必要なら lastPlacedColor を参照）
-  if (lastPlacedStone) {
-    const prevColor = (typeof lastPlacedColor === 'string' && lastPlacedColor === 'black') ? 0x000000 : 0xffffff;
-    revertPreviousRedStone(prevColor);
-  }
+        if (lastPlacedStone && lastPlacedColor) {
+        const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
+        revertPreviousRedStone(prevColor);
+      }
 
   createStone(x, y, z, color, true);
   board[x][y][z] = aiColor;
@@ -969,4 +970,5 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
