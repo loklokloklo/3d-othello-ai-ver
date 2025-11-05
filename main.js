@@ -750,6 +750,7 @@ async function fetchAIMove(board, player) {
     if (!response.ok) throw new Error(`status ${response.status}`);
 
     const data = await response.json();
+    console.log('[AI応答詳細]', JSON.stringify(data, null, 2));
     console.log('[AI応答]', data);
     return data.move;
   } catch (error) {
@@ -970,5 +971,6 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
 
