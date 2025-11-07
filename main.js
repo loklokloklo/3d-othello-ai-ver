@@ -916,25 +916,26 @@ async function handleAITurn() {
 // 着手処理を分離すると見通しが良い
 function performAIMoveAndContinue(aiMove) {
   const [x, y, z] = aiMove;
-  const color = aiColor === 'black' ? 0x000000 : 0xffffff;
+  const color = currentTurn === 'black' ? 0x000000 : 0xffffff;
 
   // 前の赤膜を戻す（もし必要なら lastPlacedColor を参照）
         if (lastPlacedStone && lastPlacedColor) {
         const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
         revertPreviousRedStone(prevColor);
       }
-
+  
   createStone(x, y, z, color, true);
-  board[x][y][z] = aiColor;
+  board[x][y][z] = currentTurn;
   placedStones.add(`${x},${y},${z}`);
   lastPlacedStone = [x, y, z];
-  lastPlacedColor = aiColor;
+  lastPlacedColor = currentTurn;
 
-  moveHistory.push({ player: aiColor, move: [x, y, z] });
-  flipStones(x, y, z, aiColor);
-
-  currentTurn = aiColor === 'black' ? 'white' : 'black';
+  moveHistory.push({ player: currentTurn, move: [x, y, z] });
+  flipStones(x, y, z, currentTurn);
   updateStoneCountDisplay();
+
+  currentTurn = currentTurn === 'black' ? 'white' : 'black';
+  
   showAllLegalMoves();
   if (checkGameEnd()) return;
 
@@ -971,6 +972,7 @@ function convertBoardForAI(board) {
     )
   );
 }
+
 
 
 
