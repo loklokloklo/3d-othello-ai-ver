@@ -282,6 +282,7 @@ function createStone(x, y, z, color, isLastPlaced = false) {
   const key = `${x},${y},${z}`;
   stoneMap.set(key, stone); // 管理用マップに記録
 }
+
 function revertPreviousRedStone(color) {
   if (!lastPlacedStone) return;
 
@@ -299,12 +300,6 @@ function setupPointerListener() {
 
 function handlePointerDownOnce(event) {
   if (!gameStarted || !firstPlayer) return;
-
-  // プレイヤーが合法手を持たない場合はパス表示（AIの手番は自動処理される）
-  if (!hasAnyLegalMove(currentTurn) && currentTurn !== aiColor) {
-    showPassPopup();
-    return;
-  }
 
   if (currentTurn === aiColor) return;
 
@@ -331,7 +326,7 @@ function handlePointerDownOnce(event) {
     // 石を置く前に、前の赤い石を元の色に戻す
     if (lastPlacedStone) {
       const [lx, ly, lz] = lastPlacedStone;
-      const prevColor = currentTurn === 'black' ? 0xffffff : 0x000000;
+      const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
       revertPreviousRedStone(prevColor);
     }
 
@@ -351,7 +346,15 @@ function handlePointerDownOnce(event) {
 
     updateStoneCountDisplay();
     showAllLegalMoves();
-    checkGameEnd();
+    
+    if (!hasAnyLegalMove(currentTurn)) {
+      // 両者とも置けなければゲーム終了
+        const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
+        if (!hasAnyLegalMove(otherPlayer)) {
+          checkGameEnd();
+        } else {
+          showPassPopup(); // パス表示
+        }}
 
     if (currentTurn === aiColor) {
       handleAITurn();
@@ -917,18 +920,14 @@ async function handleAITurn() {
 function performAIMoveAndContinue(aiMove) {
   const [x, y, z] = aiMove;
   const color = currentTurn === 'black' ? 0x000000 : 0xffffff;
-
-  // 前の赤膜を戻す（もし必要なら lastPlacedColor を参照）
-        if (lastPlacedStone && lastPlacedColor) {
-        const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
-        revertPreviousRedStone(prevColor);
-      }
   
   createStone(x, y, z, color, true);
   board[x][y][z] = currentTurn;
   placedStones.add(`${x},${y},${z}`);
   lastPlacedStone = [x, y, z];
   lastPlacedColor = currentTurn;
+  console.log(currentTurn);
+  console.log(lastPlacedColor);
 
   moveHistory.push({ player: currentTurn, move: [x, y, z] });
   flipStones(x, y, z, currentTurn);
@@ -972,7 +971,6 @@ function convertBoardForAI(board) {
     )
   );
 }
-
 
 
 
