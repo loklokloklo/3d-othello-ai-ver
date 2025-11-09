@@ -8,9 +8,10 @@ import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/
 window.init = init;
 
 
+
 let scene, camera, renderer, labelRenderer, controls;
 let boardGroup;
-let currentTurn = 'black'; // 現在の手番（'black' または 'white'）
+let currentTurn = null; // 現在の手番（'black' または 'white'）
 // グローバル変数に追加
 let gameStarted = false;
 // グローバル領域に追加（scene, camera, などと同じ場所）
@@ -23,6 +24,8 @@ const stoneMap = new Map(); // キー = "x,y,z", 値 = stone Mesh
 const moveHistory = []; // 各手の記録 ["2,3,1", "1,1,1", ...]
 let firstPlayer = 'black';
 let aiColor;
+let aicannot = false;
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyDpXdLFl05RGNS7sh0FEbFAtcM8aWgMVvg",
@@ -303,6 +306,7 @@ function handlePointerDownOnce(event) {
 
   if (currentTurn === aiColor) return;
 
+
   const mouse = new THREE.Vector2();
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -347,14 +351,17 @@ function handlePointerDownOnce(event) {
     updateStoneCountDisplay();
     showAllLegalMoves();
     
-    if (!hasAnyLegalMove(currentTurn)) {
-      // 両者とも置けなければゲーム終了
-        const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
-        if (!hasAnyLegalMove(otherPlayer)) {
-          checkGameEnd();
+        if (currentTurn !== aiColor) {
+    const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
+    console.log(currentTurn, aiColor, hasAnyLegalMove(currentTurn), hasAnyLegalMove(aiColor), hasAnyLegalMove(otherPlayer),aicannot);
+    
+    if (!hasAnyLegalMove(currentTurn) && gameStarted === true) {
+        if (!hasAnyLegalMove(otherPlayer) ) {
+            checkGameEnd();
         } else {
-          showPassPopup(); // パス表示
-        }}
+            showPassPopup();
+        }
+    }}
 
     if (currentTurn === aiColor) {
       handleAITurn();
@@ -888,18 +895,29 @@ async function handleAITurn() {
           if (retryMove == null) {
             // 安全側：今回はパス扱い（無限ループ阻止のため）
             console.error("❌ retryでも取得できず：安全のため今回AIはパス扱いにします");
-            moveHistory.push({ player: aiColor, pass: true });
-      if (lastPlacedStone && lastPlacedColor) {
-        const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
-        revertPreviousRedStone(prevColor);
-      }
-            showAIPassPopup("AIはパスしました");
-            currentTurn = aiColor === 'black' ? 'white' : 'black';
-            updateStoneCountDisplay();
-            showAllLegalMoves();
-            if (checkGameEnd()) return;
-            if (currentTurn === aiColor) setTimeout(() => handleAITurn(), 800);
-            return;
+            aicannot = true;
+
+            if (aicannot === true){
+              let aiMove = chooseMoveMinOpponentLegal();
+            if (aiMove) performAIMoveAndContinue(aiMove);
+              else {
+                moveHistory.push({ player: aiColor, pass: true });
+                  if (lastPlacedStone && lastPlacedColor) {
+                    const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
+                    revertPreviousRedStone(prevColor);
+                  }
+                showAIPassPopup("AIはパスしました");
+                currentTurn = aiColor === 'black' ? 'white' : 'black';
+                updateStoneCountDisplay();
+                showAllLegalMoves();
+                PassorNot();
+                if (checkGameEnd()) return;
+                if (currentTurn === aiColor) setTimeout(() => handleAITurn(), 800);
+                return;
+              }
+              console.log("aaaa")
+              PassorNot();
+            }
           } else {
             // リトライ成功 -> 通常の着手処理へ
             performAIMoveAndContinue(retryMove);
@@ -913,7 +931,10 @@ async function handleAITurn() {
     // ④ aiMove が存在する（通常ケース）なら着手処理
     performAIMoveAndContinue(aiMove);
 
+    PassorNot();
+
   }, 0);
+  
 }
 
 // 着手処理を分離すると見通しが良い
@@ -972,5 +993,111 @@ function convertBoardForAI(board) {
   );
 }
 
+function PassorNot() {
+  if (currentTurn !== aiColor) {
+    const otherPlayer = currentTurn === 'black' ? 'white' : 'black';
+    console.log(
+      "currentTurn=",currentTurn,
+       "aiColor=", aiColor,
+       "hasAnyLegalMove(currentTurn)", hasAnyLegalMove(currentTurn),
+       "hasAnyLegalMove(aiColor)", hasAnyLegalMove(aiColor), 
+       "hasAnyLegalMove(othePlayer)", hasAnyLegalMove(otherPlayer),
+       "aicannot=",aicannot,
+       "gameStarted=",gameStarted);
+    
+    if (hasAnyLegalMove(currentTurn) === false && gameStarted === true) {
+        if (hasAnyLegalMove(otherPlayer) === false) {
+          console.log("checkgameend中");
+            checkGameEnd();
+        } else {
+          console.log("showpasspopup中");
+            showPassPopup();
+        }
+    }
+  }
+}  
 
 
+
+/**
+ * currentTurn の色で合法手を評価し、
+ * 相手の合法手が最も少なくなる手を返す
+ * 盤は変更せず、仮想盤でシミュレーション
+ */
+function chooseMoveMinOpponentLegal() {
+  // ① 現在の手番の合法手を取得
+  const legalMoves = generateLegalMoves(currentTurn);
+  if (legalMoves.length === 0) return null; // 合法手なしなら null
+
+  let bestMove = null;
+  let minOpponentMoves = Infinity;
+
+  // ② 各合法手についてシミュレーション
+  for (const [x, y, z] of legalMoves) {
+    // 仮想盤の作成（deep copy）
+    const boardCopy = board.map(layer => layer.map(row => row.slice()));
+
+    // 仮に置いて flip
+    simulateMove(boardCopy, x, y, z, currentTurn);
+
+    // ③ 相手色の合法手数を数える
+    const opponent = currentTurn === 'black' ? 'white' : 'black';
+    let opponentLegalCount = 0;
+    for (let xi = 0; xi < 4; xi++) {
+      for (let yi = 0; yi < 4; yi++) {
+        for (let zi = 0; zi < 4; zi++) {
+          if (isLegalMove(boardCopy, xi, yi, zi, opponent)) {
+            opponentLegalCount++;
+          }
+        }
+      }
+    }
+
+    // ④ 相手の合法手が最小のものを更新
+    if (opponentLegalCount < minOpponentMoves) {
+      minOpponentMoves = opponentLegalCount;
+      bestMove = [x, y, z];
+    }
+  }
+
+  return bestMove; // [x, y, z] または null
+}
+
+/**
+ * 仮想盤で石を置き、flipする処理
+ * 実際の盤には影響なし
+ */
+function simulateMove(boardCopy, x, y, z, turnColor) {
+  const opponent = turnColor === 'black' ? 'white' : 'black';
+  boardCopy[x][y][z] = turnColor;
+
+  for (const [dx, dy, dz] of directions) {
+    const stonesToFlip = [];
+    let nx = x + dx;
+    let ny = y + dy;
+    let nz = z + dz;
+
+    while (
+      nx >= 0 && nx < 4 &&
+      ny >= 0 && ny < 4 &&
+      nz >= 0 && nz < 4 &&
+      boardCopy[nx][ny][nz] === opponent
+    ) {
+      stonesToFlip.push([nx, ny, nz]);
+      nx += dx; ny += dy; nz += dz;
+    }
+
+    if (
+      stonesToFlip.length > 0 &&
+      nx >= 0 && nx < 4 &&
+      ny >= 0 && ny < 4 &&
+      nz >= 0 && nz < 4 &&
+      boardCopy[nx][ny][nz] === turnColor
+    ) {
+      // flip
+      for (const [fx, fy, fz] of stonesToFlip) {
+        boardCopy[fx][fy][fz] = turnColor;
+      }
+    }
+  }
+}
