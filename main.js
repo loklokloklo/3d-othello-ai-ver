@@ -831,7 +831,7 @@ showAILoadingIndicator();
     if (!hasAnyLegalMove(aiColor)) {
       console.log("🧾 hasAnyLegalMove => false: AIは確実に置けない");
       // パス処理
-      showAILoadingIndicator();
+      hideAILoadingIndicator();
       moveHistory.push({ player: aiColor, pass: true });
       // 前回赤膜の復元（lastPlacedColor を使うことを推奨）
       if (lastPlacedStone && lastPlacedColor) {
@@ -870,7 +870,7 @@ showAILoadingIndicator();
       if (fallbackMoves.length === 0) {
         // 本当に置けない（fetchAIMove と整合）
         console.log("🚫 フォールバックでも合法手なし：AIパス確定");
-        showAILoadingIndicator();
+       hideAILoadingIndicator();
         moveHistory.push({ player: aiColor, pass: true });
       if (lastPlacedStone && lastPlacedColor) {
         const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
@@ -904,10 +904,11 @@ showAILoadingIndicator();
             if (aicannot === true){
               let aiMove = chooseMoveMinOpponentLegal();
             if (aiMove) {
-              showAILoadingIndicator();
+             hideAILoadingIndicator();
               performAIMoveAndContinue(aiMove);
             }
               else {
+                hideAILoadingIndicator();
                 moveHistory.push({ player: aiColor, pass: true });
                   if (lastPlacedStone && lastPlacedColor) {
                     const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
@@ -927,7 +928,7 @@ showAILoadingIndicator();
             }
           } else {
             // リトライ成功 -> 通常の着手処理へ
-            showAILoadingIndicator();
+           hideAILoadingIndicator();
             performAIMoveAndContinue(retryMove);
             return;
           }
@@ -937,7 +938,7 @@ showAILoadingIndicator();
     }
 
     // ④ aiMove が存在する（通常ケース）なら着手処理
-    showAILoadingIndicator();
+   hideAILoadingIndicator();
     performAIMoveAndContinue(aiMove);
 
     PassorNot();
@@ -948,6 +949,7 @@ showAILoadingIndicator();
 
 // 着手処理を分離すると見通しが良い
 function performAIMoveAndContinue(aiMove) {
+  hideAILoadingIndicator();
   const [x, y, z] = aiMove;
   const color = currentTurn === 'black' ? 0x000000 : 0xffffff;
   
@@ -1171,4 +1173,3 @@ function simulateMove(boardCopy, x, y, z, turnColor) {
     }
   }
 }
-
