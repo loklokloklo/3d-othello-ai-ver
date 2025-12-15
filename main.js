@@ -819,6 +819,8 @@ async function handleAITurn() {
 
   console.log("🧠 AIターン開始: currentTurn =", currentTurn);
 
+showAILoadingIndicator();
+  
   // 盤情報を最新化（ビュー側も更新）
   updateStoneCountDisplay();
   showAllLegalMoves();
@@ -829,6 +831,7 @@ async function handleAITurn() {
     if (!hasAnyLegalMove(aiColor)) {
       console.log("🧾 hasAnyLegalMove => false: AIは確実に置けない");
       // パス処理
+      showAILoadingIndicator();
       moveHistory.push({ player: aiColor, pass: true });
       // 前回赤膜の復元（lastPlacedColor を使うことを推奨）
       if (lastPlacedStone && lastPlacedColor) {
@@ -867,6 +870,7 @@ async function handleAITurn() {
       if (fallbackMoves.length === 0) {
         // 本当に置けない（fetchAIMove と整合）
         console.log("🚫 フォールバックでも合法手なし：AIパス確定");
+        showAILoadingIndicator();
         moveHistory.push({ player: aiColor, pass: true });
       if (lastPlacedStone && lastPlacedColor) {
         const prevColor = lastPlacedColor === 'black' ? 0x000000 : 0xffffff;
@@ -899,7 +903,10 @@ async function handleAITurn() {
 
             if (aicannot === true){
               let aiMove = chooseMoveMinOpponentLegal();
-            if (aiMove) performAIMoveAndContinue(aiMove);
+            if (aiMove) {
+              showAILoadingIndicator();
+              performAIMoveAndContinue(aiMove);
+            }
               else {
                 moveHistory.push({ player: aiColor, pass: true });
                   if (lastPlacedStone && lastPlacedColor) {
@@ -920,6 +927,7 @@ async function handleAITurn() {
             }
           } else {
             // リトライ成功 -> 通常の着手処理へ
+            showAILoadingIndicator();
             performAIMoveAndContinue(retryMove);
             return;
           }
@@ -929,6 +937,7 @@ async function handleAITurn() {
     }
 
     // ④ aiMove が存在する（通常ケース）なら着手処理
+    showAILoadingIndicator();
     performAIMoveAndContinue(aiMove);
 
     PassorNot();
@@ -1067,6 +1076,67 @@ function chooseMoveMinOpponentLegal() {
  * 仮想盤で石を置き、flipする処理
  * 実際の盤には影響なし
  */
+// ========================================
+// AI思考中ローディング表示の制御関数
+// ========================================
+function showAILoadingIndicator() {
+  if (document.getElementById('ai-loading-indicator')) return;
+
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'ai-loading-indicator';
+  loadingDiv.innerHTML = `
+    <div class="spinner"></div>
+    <p>AI思考中...</p>
+  `;
+  
+  loadingDiv.style.position = 'fixed';
+  loadingDiv.style.top = '50%';
+  loadingDiv.style.left = '50%';
+  loadingDiv.style.transform = 'translate(-50%, -50%)';
+  loadingDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+  loadingDiv.style.padding = '30px 50px';
+  loadingDiv.style.borderRadius = '15px';
+  loadingDiv.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
+  loadingDiv.style.zIndex = '10000';
+  loadingDiv.style.textAlign = 'center';
+  loadingDiv.style.fontSize = '18px';
+  loadingDiv.style.fontWeight = 'bold';
+  loadingDiv.style.color = '#333';
+
+  document.body.appendChild(loadingDiv);
+
+  if (!document.getElementById('spinner-style')) {
+    const style = document.createElement('style');
+    style.id = 'spinner-style';
+    style.textContent = `
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px auto;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+function hideAILoadingIndicator() {
+  const loadingDiv = document.getElementById('ai-loading-indicator');
+  if (loadingDiv) {
+    loadingDiv.remove();
+  }
+}
+
+
+
 function simulateMove(boardCopy, x, y, z, turnColor) {
   const opponent = turnColor === 'black' ? 'white' : 'black';
   boardCopy[x][y][z] = turnColor;
@@ -1101,3 +1171,4 @@ function simulateMove(boardCopy, x, y, z, turnColor) {
     }
   }
 }
+
