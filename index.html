@@ -89,13 +89,72 @@
       border-radius: 4px;
       pointer-events: none;
     }
+
+    /* 1手戻すボタン：ホバー・アクティブ */
+    #undo-button:hover {
+      background: #c03030 !important;
+    }
+    #undo-button:active {
+      transform: scale(0.96);
+    }
+    #pass-undo-button:hover {
+      background: #c03030 !important;
+    }
+
+    /* パスポップアップは初期非表示（display:none を確実に適用） */
+    #pass-popup {
+      display: none !important;
+    }
+    #pass-popup.visible {
+      display: flex !important;
+    }
+
+
+
+
+    
   </style>
 </head>
 <body>
-<!-- 石の数表示 -->
-<div id="stone-count-display" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: black; background: rgba(255,255,255,0.9); padding: 15px 30px; border-radius: 12px; font-size: 24px; font-weight: bold; z-index: 10; min-width: 220px; text-align: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);">
-  黒: 0 ／ 白: 0
-</div>
+
+  <!-- 石の数表示 + 1手戻すボタン -->
+  <div style="
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    z-index: 10;
+  ">
+    <div id="stone-count-display" style="
+      color: black;
+      background: rgba(255,255,255,0.9);
+      padding: 15px 30px;
+      border-radius: 12px;
+      font-size: 24px;
+      font-weight: bold;
+      min-width: 220px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    ">
+      黒: 0 ／ 白: 0
+    </div>
+    <button id="undo-button" style="
+      padding: 15px 18px;
+      background: #e05555;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    ">↩ 1手戻す</button>
+  </div>
 
  <!-- 手番選択UI -->
   <div id="turn-selection">
@@ -124,7 +183,25 @@ align-items: center;
   text-align: center;
 ">
   <p>置ける場所がありません。AIのターンになります。</p>
-  <button id="pass-ok-button" style="margin-top: 10px;">OK</button>
+  <div style="display: flex; justify-content: center; gap: 12px; margin-top: 10px;">
+        <button id="pass-ok-button" style="
+          padding: 8px 20px;
+          font-size: 15px;
+          border-radius: 6px;
+          cursor: pointer;
+        ">OK</button>
+        <button id="pass-undo-button" style="
+          background: #e05555;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          padding: 8px 14px;
+          font-size: 15px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: background 0.15s;
+        ">↩ 1手戻す</button>
+      </div>
 </div>
 </div>
 
